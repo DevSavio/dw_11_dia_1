@@ -1,16 +1,20 @@
+import 'package:agendador_dw11/src/features/auth/login/login_state.dart';
+import 'package:agendador_dw11/src/features/auth/login/login_vm.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:validatorless/validatorless.dart';
 
 import '../../../core/ui/helpers/form_helper.dart';
+import '../../../core/ui/helpers/messages.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final formKey = GlobalKey<FormState>();
   final emailEC = TextEditingController();
   final passwordEC = TextEditingController();
@@ -24,6 +28,23 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final LoginVm(:login) = ref.watch(loginVmProvider.notifier);
+    ref.listen(loginVmProvider, (_, state) {
+      switch (state) {
+        case LoginState(status: LoginStateStatus.initial):
+          break;
+        case LoginState(status: LoginStateStatus.error, :final errorMessage?):
+          Messages.showError(errorMessage, context);
+          break;
+        case LoginState(status: LoginStateStatus.error):
+          Messages.showError('Erro ao realizar login', context);
+          break;
+        case LoginState(status: LoginStateStatus.admLogin):
+          break;
+        case LoginState(status: LoginStateStatus.employeeLogin):
+          break;
+      }
+    });
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 236, 187, 203),
       body: Form(
@@ -85,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                                   'Senha deve conter no mínimo 6 caracteres'),
                             ]),
                             obscureText: true,
-                            controller: emailEC,
+                            controller: passwordEC,
                             decoration: const InputDecoration(
                               label: Text("Senha:"),
                               hintText: 'Senha: ',
@@ -114,7 +135,16 @@ class _LoginPageState extends State<LoginPage> {
                             style: ElevatedButton.styleFrom(
                               minimumSize: const Size.fromHeight(56),
                             ),
-                            onPressed: () {},
+                            onPressed: () {
+                              switch (formKey.currentState?.validate()) {
+                                case (false || null):
+                                  Messages.showError(
+                                      "Campos inválidos", context);
+                                  break;
+                                case true:
+                                  login(emailEC.text, passwordEC.text);
+                              }
+                            },
                             child: const Text(
                               "ACESSAR",
                               style: TextStyle(
